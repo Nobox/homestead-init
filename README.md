@@ -1,59 +1,102 @@
-# Homestead setup
+# Homestead Setup
 
-These are extra steps to setup our Homestead development machines for our current dev workflow.
+## VirtualBox and Vagrant
 
-## Automatic installation
+Start by installing [Homebrew](http://brew.sh/) and [Cask](http://caskroom.io/) if you haven't already.
 
-The `init.sh` script takes care of it all automatically. Simply run:
-
-```
-sh init.sh
-```
-
-## Manual installation
-
-Before doing any of these steps, Homestead should already be installed following its [documentation](http://laravel.com/docs/5.0/homestead).
-
-### Notifications
-
-Laravel Elixir requires notifications, but Homestead by default doesn't have what it requires so tasks using `gulp-notify` will output a ton of errors.
-
-**On your host machine**, install `terminal-notifier` with [Homebrew](http://brew.sh/)
+Now install these two with Cask. It's easier and further updates are trivial.
 
 ```
-brew install terminal-notifier
+brew cask install virtualbox vagrant
 ```
 
-Install [Vagrant plugin](https://github.com/fgrehm/vagrant-notify) that forwards notifications.
+## Installing Homestead
+
+Install the vagrant box
 
 ```
-vagrant install vagrant-notify
+vagrant box add laravel/homestead
 ```
 
-Copy `notify-send` script over to somewhere in your $PATH, and make it executable. This file is used by vagrant-notify to forward notifications to your machine.
+Clone the Homestead repository to your home directory and run its script.
 
 ```
-sudo cp notify-send /usr/local/bin/
-sudo chmod +x /usr/local/bin/notify-send
+git clone https://github.com/laravel/homestead.git Homestead
+cd ~/Homestead
+bash init.sh
 ```
 
-### Stubs
+## Extras
 
-Homestead copies over some default scripts to `~/.homestead`. This repo contains these same files but with the extras required by our workflow. Copy them to `~/.homestead`, and provision/reload your virtual machine.
+Our development team workflow requires Homestead to have some more additional software installed. [Learn more](docs/about.md)
 
-#### after.sh
+Clone this repo to wherever you want and run its own script:
 
-This file runs after the default Homestead provisioning is done. It will run only once, then skip for further provisions.
+```
+git clone https://github.com/laravel/homestead.git homestead-init
+cd homestead-init
+bash init.sh
+```
 
-* Installs `notify-send` OS packages for notifications support. Ubuntu server edition doesn't have it installed by default.
-* Installs [Zsh](http://www.zsh.org/) and [oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh)
-* Installs ImageMagick
-* Installs Ruby
+## Setup SSH
 
-#### Homestead.yaml
+If you don't have an SSH key yet, follow Github's [guide](https://help.github.com/articles/generating-ssh-keys/) on the subject.
 
-This file is nearly identical to Homestead's default, with the exception of having [NFS](http://docs.vagrantup.com/v2/synced-folders/nfs.html) turned on. This improves the virtual machine's performance considerably, specially npm and gulp processes.
+## Configure shared folders
 
-#### aliases
+In the folders property of the `Homestead.yaml` file should be the path to the directory you wish to share with the VM. Mapping your entire `Sites` directory is fine.
 
-This file is pretty much identical to Homestead's defaults. Could be customized later on.
+```
+folders:
+    - map: ~/Sites
+      to: /home/vagrant/Code
+```
+
+## Configure Nginx sites
+
+Follow the site configuration already provided in the `Homestead.yaml` file and add entries for each of your sites. Each site should map its web root, which in our case is `public`.
+
+Map the domain name for each site to its folder, and add them to your `/etc/hosts` file pointing to the virtual machine's IP address set in `Homestead.yaml`, which by default is `192.168.10.10`.
+
+```
+127.0.0.1   localhost
+192.168.10.10   homestead.app
+...
+```
+
+## Run Homestead box
+
+The final step is to obviously create the virtual machine.
+
+```
+cd ~/Homestead
+vagrant up
+```
+
+This command will create a vagrant VM, provision it with Homestead's default provision, and then run our custom after.sh script that adds the remaining ingredients.
+
+After it's done, you can visit any of the sites through the defined URLs
+
+```
+http://homestead.app
+```
+
+## SSH
+
+You can go into the virtual machine through an SSH connection.
+
+```
+cd ~/Homestead
+vagrant ssh
+```
+
+The `~/Code` folder should now have the same structure as your mapped directory.
+
+## Databases
+
+To connect to Homestead's databases from your **host** machine via software like Sequel Pro, you should connect to `127.0.0.1` on port 33060 (MySQL) or 54320 (Postgres), then create databases as usual.
+
+## More information
+
+* [Homestead documentation](http://laravel.com/docs/5.0/homestead)
+* [Vagrant docs](https://docs.vagrantup.com/v2/)
